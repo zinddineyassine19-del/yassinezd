@@ -422,11 +422,6 @@ body.menu-open .drawer{ opacity:1; visibility:visible; transform:none; }
      Pilotée en JS. Sert au point, à la dérive et à l'extinction
      de la lumière. */
   --p:0;
-  /* --mx / --my : position du curseur dans le plan, de -1 à 1.
-     Le portrait et le fond ne bougent pas de la même quantité :
-     c'est cet écart qui fait la profondeur, pas la rotation. */
-  --mx:0; --my:0;
-  perspective:1300px; perspective-origin:68% 42%;
 }
 /* Fond du hero : lumière de studio — une clé tungstène à droite,
    un léger renvoi froid à gauche. Une vidéo ou une photo peut le
@@ -449,9 +444,7 @@ body.menu-open .drawer{ opacity:1; visibility:visible; transform:none; }
 .hero-media{
   filter:blur(calc(var(--p) * 4px));
   opacity:calc(1 - var(--p) * .45);
-  transform:
-    scale(calc(1.03 + var(--p) * .04))
-    translate3d(calc(var(--mx) * 13px), calc(var(--my) * 10px), 0);
+  transform:scale(calc(1 + var(--p) * .04));
   will-change:filter, opacity, transform;
 }
 /* La clé tungstène — elle baisse quand on quitte le plan */
@@ -479,26 +472,16 @@ body.menu-open .drawer{ opacity:1; visibility:visible; transform:none; }
   max-width:58vw;
   display:flex; align-items:flex-end; justify-content:flex-end;
   pointer-events:none;
-  transform-style:preserve-3d;
-  transform-origin:72% 82%;
-  transform:
-    translate3d(calc(var(--mx) * -26px), calc(var(--my) * -17px), 0)
-    rotateY(calc(var(--mx) * -5.4deg))
-    rotateX(calc(var(--my) * 3.6deg + var(--p) * 3deg));
-  will-change:transform;
-}
-@media (prefers-reduced-motion: reduce){
-  .hero{ perspective:none; }
-  .hero-figure{ transform:none; }
-  .hero-media{ transform:scale(calc(1 + var(--p) * .04)); }
 }
 /* Le point : net à l'arrêt, il part au flou quand on descend —
    comme un pointeur qui lâche la mise au point sur le sujet. */
 .hero-figure img{
   max-height:100%; max-width:100%; width:auto; height:auto;
+  /* Aucun étalonnage sur le portrait : la photo reste telle qu'elle
+     a été prise. Il ne reste que le flou du point au scroll et
+     l'ombre portée, qui décolle le sujet du fond. */
   filter:
     blur(calc(var(--p) * 11px))
-    contrast(1.03) saturate(.94)
     drop-shadow(-24px 22px 46px rgba(0,0,0,.55));
   transform:
     translate3d(0, calc(var(--p) * 58px), 0)
@@ -554,7 +537,6 @@ body.menu-open .drawer{ opacity:1; visibility:visible; transform:none; }
   .hero-figure img{
     filter:
       blur(calc(var(--p) * 8px))
-      contrast(1.03) saturate(.94)
       drop-shadow(0 22px 40px rgba(0,0,0,.5));
     -webkit-mask-image:linear-gradient(to bottom, #000 56%, rgba(0,0,0,.5) 84%, transparent 99%);
             mask-image:linear-gradient(to bottom, #000 56%, rgba(0,0,0,.5) 84%, transparent 99%);
@@ -2142,38 +2124,6 @@ window.CONFIG = {
         a.style.setProperty('--my', my.toFixed(4));
       });
     }, { passive:true });
-  })();
-
-  /* ---------------------------------------------------------
-     RELIEF DU PORTRAIT
-     Le fond suit le curseur, le portrait part dans l'autre sens et
-     bascule à peine : l'écart entre les deux fait la profondeur.
-     La valeur visée est rejointe par petits pas (lissage), sinon le
-     portrait saute d'un point à l'autre avec la souris.
-     --------------------------------------------------------- */
-  (function(){
-    var hero = document.getElementById('accueil');
-    if (!hero) return;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
-    var vx = 0, vy = 0, cx = 0, cy = 0, boucle = 0;
-    var pas = function(){
-      boucle = 0;
-      cx += (vx - cx) * 0.085;
-      cy += (vy - cy) * 0.085;
-      hero.style.setProperty('--mx', cx.toFixed(4));
-      hero.style.setProperty('--my', cy.toFixed(4));
-      if (Math.abs(vx - cx) > 0.0015 || Math.abs(vy - cy) > 0.0015) lance();
-    };
-    var lance = function(){ if (!boucle) boucle = requestAnimationFrame(pas); };
-    hero.addEventListener('pointermove', function(e){
-      var r = hero.getBoundingClientRect();
-      if (!r.width || !r.height) return;
-      vx = ((e.clientX - r.left) / r.width - 0.5) * 2;
-      vy = ((e.clientY - r.top) / r.height - 0.5) * 2;
-      lance();
-    }, { passive:true });
-    hero.addEventListener('pointerleave', function(){ vx = 0; vy = 0; lance(); }, { passive:true });
   })();
 
   var sansMouvement = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
